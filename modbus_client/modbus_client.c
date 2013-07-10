@@ -11,13 +11,13 @@ const char DebugOpt[]   = "debug";
 const char TcpOptVal[]  = "tcp";
 const char RtuOptVal[]  = "rtu";
 
-enum ConnType {
+typedef enum {
     None,
     Tcp,
     Rtu
-};
+} ConnType;
 
-enum FuncType {
+typedef enum {
     FuncNone =          -1,
 
     ReadCoils           = 0x01,
@@ -28,12 +28,12 @@ enum FuncType {
     WriteSingleRegister = 0x06,
     WriteMultipleCoils  = 0x0f,
     WriteMultipleRegisters  = 0x10
-};
+} FuncType;
 
 void printUsage(const char progName[]) {
     printf("%s [--%s] [-m {rtu|tcp}] [-a<slave-addr=1>] [-c<read-no>=1]\n\t" \
            "[-r<start-addr>=100] [-t<f-type>] [-o<timeout-ms>=1000] [{rtu-params|tcp-params}] serialport|host [<write-data>]\n", progName, DebugOpt);
-    printf("\tNOTE: if first reference address starts at 0, set -0\n");
+    printf("NOTE: if first reference address starts at 0, set -0\n");
     printf("f-type:\n" \
            "\t(0x01) Read Coils, (0x02) Read Discrete Inputs, (0x05) Write Single Coil\n" \
            "\t(0x03) Read Holding Registers, (0x04) Read Input Registers, (0x06) WriteSingle Register\n" \
@@ -61,18 +61,18 @@ int getInt(const char str[], int *ok) {
     return value;
 }
 
-struct BackendParams {
+typedef struct {
     ConnType type;
-};
+} BackendParams;
 
-struct RtuBackend {
+typedef struct {
     ConnType type;
     char devName[32];
     int baud;
     int dataBits;
     int stopBits;
     char parity;
-};
+} RtuBackend;
 
 BackendParams *initRtuParams(RtuBackend *rtuParams) {
     rtuParams->type = Rtu;
@@ -125,11 +125,11 @@ int setRtuParam(RtuBackend* rtuParams, char c, char *value) {
     return ok;
 }
 
-struct TcpBackend {
+typedef struct {
     ConnType type;
     char ip[32];
     int port;
-};
+} TcpBackend;
 
 BackendParams *initTcpParams(TcpBackend *tcpParams) {
     tcpParams->type = Tcp;
@@ -210,10 +210,11 @@ int main(int argc, char **argv)
             break;
 
         case 'm':
-            if (0 == strcmp(optarg, TcpOptVal))
-                backend = initTcpParams(new TcpBackend);
+            if (0 == strcmp(optarg, TcpOptVal)) {
+                backend = initTcpParams((TcpBackend*)malloc(sizeof(TcpBackend)));
+            }
             else if (0 == strcmp(optarg, RtuOptVal))
-                backend = initRtuParams(new RtuBackend);
+                backend = initRtuParams((RtuBackend*)malloc(sizeof(RtuBackend)));
             else {
                 printf("Unrecognized connection type %s\n\n", optarg);
                 printUsage(argv[0]);
@@ -350,10 +351,10 @@ int main(int argc, char **argv)
         //no need to alloc anything
         break;
     case (Data8Array):
-        data.data8 = new uint8_t[readWriteNo];
+        data.data8 = malloc(readWriteNo * sizeof(uint8_t));
         break;
     case (Data16Array):
-        data.data16 = new uint16_t[readWriteNo];
+        data.data16 = malloc(readWriteNo * sizeof(uint16_t));
         break;
     default:
         printf("Data alloc error!\n");
@@ -490,9 +491,9 @@ int main(int argc, char **argv)
     //cleanup
     if (0 != backend) {
         if (Rtu == backend->type)
-            delete (RtuBackend*)backend;
+            free((RtuBackend*)backend);
         else if (Tcp == backend->type)
-            delete (TcpBackend*)backend;
+            free ((TcpBackend*)backend);
     }
 
     switch (wDataType) {
@@ -500,10 +501,10 @@ int main(int argc, char **argv)
         //nothing to be done
         break;
     case (Data8Array):
-        delete data.data8;
+        free(data.data8);
         break;
     case (Data16Array):
-        delete [] data.data16;
+        free(data.data16);
         break;
     }
 
