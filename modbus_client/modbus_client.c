@@ -115,10 +115,10 @@ int main(int argc, char **argv)
 
         case 'm':
             if (0 == strcmp(optarg, TcpOptVal)) {
-                backend = initTcpParams((TcpBackend*)malloc(sizeof(TcpBackend)));
+                backend = createTcpBackend((TcpBackend*)malloc(sizeof(TcpBackend)));
             }
             else if (0 == strcmp(optarg, RtuOptVal))
-                backend = initRtuParams((RtuBackend*)malloc(sizeof(RtuBackend)));
+                backend = createRtuBackend((RtuBackend*)malloc(sizeof(RtuBackend)));
             else {
                 printf("Unrecognized connection type %s\n\n", optarg);
                 printUsage(argv[0]);
@@ -160,40 +160,20 @@ int main(int argc, char **argv)
             startReferenceAt0 = 1;
             break;
             //tcp/rtu params
-        case 'p': {
-            if (Tcp == backend->type) {
-                TcpBackend *tcpP = (TcpBackend*)backend;
-                tcpP->port = getInt(optarg, &ok);
-                if (0 == ok) {
-                    printf("Port parameter %s is not integer!\n\n", optarg);
-                    printUsage(argv[0]);
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else if (Rtu == backend->type) {
-                if (0 == setRtuParam((RtuBackend*)backend, c, optarg))
-                    exit(EXIT_FAILURE);
-            }
-            else {
-                printf("Port parameter %s specified for non TCP or RTU conn type!\n\n", optarg);
-                printUsage(argv[0]);
-                exit(EXIT_FAILURE);
-            }
-        }
-            break;
-            //rtu params
+        case 'p':
         case 'b':
         case 'd':
         case 's':
-            if (Rtu == backend->type) {
-                if (0 == setRtuParam((RtuBackend*)backend, c, optarg)) {
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else {
-                printf("Port parameter %s specified for non RTU conn type!\n\n", optarg);
+            if (0 == backend) {
+                printf("Connection type (-m switch) has to be set before its params are provided!\n");
                 printUsage(argv[0]);
                 exit(EXIT_FAILURE);
+            }
+            else {
+                if (0 == backend->setParam(backend, c, optarg)) {
+                    printUsage(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
             }
             break;
         case '?':
@@ -202,6 +182,12 @@ int main(int argc, char **argv)
         default:
             printf("?? getopt returned character code 0%o ??\n", c);
         }
+    }
+
+    if (0 == backend) {
+        printf("No connection type was specified!\n");
+        printUsage(argv[0]);
+        exit(EXIT_FAILURE);
     }
 
     if (1 == startReferenceAt0) {
@@ -313,16 +299,7 @@ int main(int argc, char **argv)
         printf("\n");
 
     //create modbus context, and preapare it
-    modbus_t *ctx = 0;
-    if (Rtu == backend->type) {
-        RtuBackend *rtu = (RtuBackend*)backend;
-        ctx = modbus_new_rtu(rtu->devName, rtu->baud, rtu->parity, rtu->dataBits, rtu->stopBits);
-    }
-    else if (Tcp == backend->type) {
-        TcpBackend *tcp = (TcpBackend*)backend;
-        ctx = modbus_new_tcp(tcp->ip, tcp->port);
-    }
-
+    modbus_t *ctx = backend->createCtxt(backend);
     modbus_set_debug(ctx, debug);
     modbus_set_slave(ctx, slaveAddr);
 
@@ -393,12 +370,9 @@ int main(int argc, char **argv)
     }
 
     //cleanup
-    if (0 != backend) {
-        if (Rtu == backend->type)
-            free((RtuBackend*)backend);
-        else if (Tcp == backend->type)
-            free ((TcpBackend*)backend);
-    }
+    modbus_close(ctx);
+    modbus_free(ctx);
+    backend->del(backend);
 
     switch (wDataType) {
     case (DataInt):
