@@ -32,7 +32,8 @@ enum FuncType {
 
 void printUsage(const char progName[]) {
     printf("%s [--%s] [-m {rtu|tcp}] [-a<slave-addr=1>] [-c<read-no>=1]\n\t" \
-           "[-r<start-addr>=100] [-t<data-type>] [-o<timeout-ms>=1000] [{rtu-params|tcp-params}] serialport|host [<write-data>]\n", progName, DebugOpt);
+           "[-r<start-addr>=100] [-t<f-type>] [-o<timeout-ms>=1000] [{rtu-params|tcp-params}] serialport|host [<write-data>]\n", progName, DebugOpt);
+    printf("\tNOTE: if first reference address starts at 0, set -0\n");
     printf("f-type:\n" \
            "\t(0x01) Read Coils, (0x02) Read Discrete Inputs, (0x05) Write Single Coil\n" \
            "\t(0x03) Read Holding Registers, (0x04) Read Input Registers, (0x06) WriteSingle Register\n" \
@@ -49,12 +50,12 @@ void printUsage(const char progName[]) {
 int getInt(const char str[], int *ok) {
     int value;
     int ret = sscanf(str, "0x%x", &value);
-    if (0 == ret) {//couldn't convert from hex, try dec
+    if (0 >= ret) {//couldn't convert from hex, try dec
         ret = sscanf(str, "%d", &value);
     }
 
     if (0 != ok) {
-        *ok = (0 != ret);
+        *ok = (0 < ret);
     }
 
     return value;
@@ -147,6 +148,7 @@ int main(int argc, char **argv)
     BackendParams *backend = 0;
     int slaveAddr = 1;
     int startAddr = 100;
+    int startReferenceAt0 = 0;
     int readWriteNo = -1;
     int fType = FuncNone;
     int timeout_ms = 1000;
@@ -171,7 +173,7 @@ int main(int argc, char **argv)
             {0, 0,  0,  0}
         };
 
-        c = getopt_long(argc, argv, "a:b:d:c:m:r:s:t:p:o:",
+        c = getopt_long(argc, argv, "a:b:d:c:m:r:s:t:p:o:0",
                         long_options, &option_index);
         if (c == -1) {
             break;
@@ -248,6 +250,10 @@ int main(int argc, char **argv)
             }
         }
             break;
+
+        case '0':
+            startReferenceAt0 = 1;
+            break;
             //tcp/rtu params
         case 'p': {
             if (Tcp == backend->type) {
@@ -291,6 +297,10 @@ int main(int argc, char **argv)
         default:
             printf("?? getopt returned character code 0%o ??\n", c);
         }
+    }
+
+    if (1 == startReferenceAt0) {
+        startAddr--;
     }
 
     //choose write data type
@@ -351,6 +361,8 @@ int main(int argc, char **argv)
     }
 
     int wDataIdx = 0;
+    if (1 == debug && 1 == isWriteFunction)
+        printf("Data to write: ");
     if (optind < argc) {
         while (optind < argc) {
             if (0 == hasDevice) {
@@ -367,16 +379,24 @@ int main(int argc, char **argv)
                     }
                 }
             }
-            else {//getting data
+            else {//setting write data buffer
                 switch (wDataType) {
                 case (DataInt):
                     data.dataInt = getInt(argv[optind], 0);
+                    if (debug)
+                        printf("0x%x", data.dataInt);
                     break;
-                case (Data8Array):
+                case (Data8Array): {
                     data.data8[wDataIdx] = getInt(argv[optind], 0);
+                    if (debug)
+                        printf("0x%02x ", data.data8[wDataIdx]);
+                }
                     break;
-                case (Data16Array):
+                case (Data16Array): {
                     data.data16[wDataIdx] = getInt(argv[optind], 0);
+                    if (debug)
+                        printf("0x%04x ", data.data16[wDataIdx]);
+                }
                     break;
                 }
                 wDataIdx++;
@@ -384,9 +404,10 @@ int main(int argc, char **argv)
             optind++;
         }
     }
+    if (1 == debug && 1 == isWriteFunction)
+        printf("\n");
 
-    //create modbus context
-
+    //create modbus context, and preapare it
     modbus_t *ctx = 0;
     if (Rtu == backend->type) {
         RtuBackend *rtu = (RtuBackend*)backend;
@@ -400,6 +421,7 @@ int main(int argc, char **argv)
     modbus_set_debug(ctx, debug);
     modbus_set_slave(ctx, slaveAddr);
 
+    //issue the request
     int ret = -1;
     if (modbus_connect(ctx) == -1) {
         fprintf(stderr, "Connection failed: %s\n",

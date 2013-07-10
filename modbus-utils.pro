@@ -3,7 +3,7 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = 
+TARGET = modbus_client
 DEPENDPATH += .
 INCLUDEPATH += .
 
