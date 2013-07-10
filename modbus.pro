@@ -9,3 +9,8 @@ INCLUDEPATH += .
 
 # Input
 SOURCES += modbus_client.cpp
+
+INCLUDEPATH += libmodbus/src
+
+LIBS += -L./libmodbus/src/.libs
+LIBS += -lmodbus

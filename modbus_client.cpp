@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "modbus.h"
+
 const char DebugOpt[]   = "debug";
 const char TcpOptVal[]  = "tcp";
 const char RtuOptVal[]  = "rtu";
@@ -61,7 +63,7 @@ struct BackendParams {
     ConnType type;
 };
 
-struct RtuParams {
+struct RtuBackend {
     ConnType type;
     char devName[32];
     int baud;
@@ -70,7 +72,7 @@ struct RtuParams {
     char parity;
 };
 
-BackendParams *initRtuParams(RtuParams *rtuParams) {
+BackendParams *initRtuParams(RtuBackend *rtuParams) {
     rtuParams->type = Rtu;
     strcpy(rtuParams->devName, "");
     rtuParams->baud = 9600;
@@ -81,7 +83,7 @@ BackendParams *initRtuParams(RtuParams *rtuParams) {
     return (BackendParams*)rtuParams;
 }
 
-int setRtuParam(RtuParams* rtuParams, char c, char *value) {
+int setRtuParam(RtuBackend* rtuParams, char c, char *value) {
     int ok = 1;
 
     switch (c) {
@@ -121,13 +123,13 @@ int setRtuParam(RtuParams* rtuParams, char c, char *value) {
     return ok;
 }
 
-struct TcpParams {
+struct TcpBackend {
     ConnType type;
     char ip[32];
     int port;
 };
 
-BackendParams *initTcpParams(TcpParams *tcpParams) {
+BackendParams *initTcpParams(TcpBackend *tcpParams) {
     tcpParams->type = Tcp;
     strcpy(tcpParams->ip, "0.0.0.0");
     tcpParams->port = 502;
@@ -203,9 +205,9 @@ int main(int argc, char **argv)
 
         case 'm':
             if (0 == strcmp(optarg, TcpOptVal))
-                backend = initTcpParams(new TcpParams);
+                backend = initTcpParams(new TcpBackend);
             else if (0 == strcmp(optarg, RtuOptVal))
-                backend = initRtuParams(new RtuParams);
+                backend = initRtuParams(new RtuBackend);
             else {
                 printf("Unrecognized connection type %s\n\n", optarg);
                 printUsage(argv[0]);
@@ -245,7 +247,7 @@ int main(int argc, char **argv)
             //tcp/rtu params
         case 'p': {
             if (Tcp == backend->type) {
-                TcpParams *tcpP = (TcpParams*)backend;
+                TcpBackend *tcpP = (TcpBackend*)backend;
                 tcpP->port = getInt(optarg, &ok);
                 if (0 == ok) {
                     printf("Port parameter %s is not integer!\n\n", optarg);
@@ -254,7 +256,7 @@ int main(int argc, char **argv)
                 }
             }
             else if (Rtu == backend->type) {
-                if (0 == setRtuParam((RtuParams*)backend, c, optarg))
+                if (0 == setRtuParam((RtuBackend*)backend, c, optarg))
                     exit(EXIT_FAILURE);
             }
             else {
@@ -268,7 +270,7 @@ int main(int argc, char **argv)
         case 'd':
         case 's':
             if (Rtu == backend->type) {
-                if (0 == setRtuParam((RtuParams*)backend, c, optarg)) {
+                if (0 == setRtuParam((RtuBackend*)backend, c, optarg)) {
                     exit(EXIT_FAILURE);
                 }
             }
@@ -326,9 +328,6 @@ int main(int argc, char **argv)
         }
         else readWriteNo = dataNo;
     }
-    else {
-        readWriteNo = 1;
-    }
 
     //allocate buffer for data
     switch (wDataType) {
@@ -352,12 +351,12 @@ int main(int argc, char **argv)
             if (0 == hasDevice) {
                 if (0 != backend) {
                     if (Rtu == backend->type) {
-                        RtuParams *rtuP = (RtuParams*)backend;
+                        RtuBackend *rtuP = (RtuBackend*)backend;
                         strcpy(rtuP->devName, argv[optind]);
                         hasDevice = 0;
                     }
                     else if (Tcp == backend->type) {
-                        TcpParams *tcpP = (TcpParams*)backend;
+                        TcpBackend *tcpP = (TcpBackend*)backend;
                         strcpy(tcpP->ip, argv[optind]);
                         hasDevice = 0;
                     }
@@ -381,14 +380,65 @@ int main(int argc, char **argv)
         }
     }
 
+    //create modbus context
 
+    modbus_t *ctx = 0;
+    if (Rtu == backend->type) {
+        RtuBackend *rtu = (RtuBackend*)backend;
+        ctx = modbus_new_rtu(rtu->devName, rtu->baud, rtu->parity, rtu->dataBits, rtu->stopBits);
+    }
+    else if (Tcp == backend->type) {
+        TcpBackend *tcp = (TcpBackend*)backend;
+        ctx = modbus_new_tcp(tcp->ip, tcp->port);
+    }
+
+    modbus_set_debug(ctx, debug);
+    modbus_set_slave(ctx, slaveAddr);
+
+    int ret = -1;
+    if (modbus_connect(ctx) == -1) {
+        fprintf(stderr, "Connection failed: %s\n",
+                modbus_strerror(errno));
+        modbus_free(ctx);
+        return -1;
+    } else {
+        switch (fType) {
+        case(ReadCoils):
+            ret = modbus_read_bits(ctx, startAddr, readWriteNo, data.dataInt);
+            break;
+        case(ReadDiscreteInput):
+            wDataType = DataInt;
+            break;
+        case(ReadHoldingRegisters):
+        case(ReadInputRegisters):
+            wDataType = Data16Array;
+            break;
+        case(WriteSingleCoil):
+        case(WriteSingleRegister):
+            wDataType = DataInt;
+            isWriteFunction = 1;
+            break;
+        case(WriteMultipleCoils):
+            wDataType = Data8Array;
+            isWriteFunction = 1;
+            break;
+        case(WriteMultipleRegisters):
+            wDataType = Data16Array;
+            isWriteFunction = 1;
+            break;
+        default:
+            printf("No correct function type chosen");
+            printUsage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+    }
 
     //cleanup
     if (0 != backend) {
         if (Rtu == backend->type)
-            delete (RtuParams*)backend;
+            delete (RtuBackend*)backend;
         else if (Tcp == backend->type)
-            delete (TcpParams*)backend;
+            delete (TcpBackend*)backend;
     }
 
     switch (wDataType) {
