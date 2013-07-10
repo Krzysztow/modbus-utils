@@ -3,13 +3,13 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = mbClient
+TARGET = mbServer
 DESTDIR = ../
 DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
-SOURCES += modbus_client.c
+SOURCES += modbus_server.c
 
 INCLUDEPATH += ../libmodbus/src \
     ../common

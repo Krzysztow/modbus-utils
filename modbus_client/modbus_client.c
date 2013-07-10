@@ -7,15 +7,11 @@
 #include "modbus.h"
 #include "errno.h"
 
+#include "mbu-common.h"
+
 const char DebugOpt[]   = "debug";
 const char TcpOptVal[]  = "tcp";
 const char RtuOptVal[]  = "rtu";
-
-typedef enum {
-    None,
-    Tcp,
-    Rtu
-} ConnType;
 
 typedef enum {
     FuncNone =          -1,
@@ -45,98 +41,9 @@ void printUsage(const char progName[]) {
            "\tp{none|even|odd}=even\n");
     printf("tcp-params:\n" \
            "\tp<port>=502\n");
-}
-
-int getInt(const char str[], int *ok) {
-    int value;
-    int ret = sscanf(str, "0x%x", &value);
-    if (0 >= ret) {//couldn't convert from hex, try dec
-        ret = sscanf(str, "%d", &value);
-    }
-
-    if (0 != ok) {
-        *ok = (0 < ret);
-    }
-
-    return value;
-}
-
-typedef struct {
-    ConnType type;
-} BackendParams;
-
-typedef struct {
-    ConnType type;
-    char devName[32];
-    int baud;
-    int dataBits;
-    int stopBits;
-    char parity;
-} RtuBackend;
-
-BackendParams *initRtuParams(RtuBackend *rtuParams) {
-    rtuParams->type = Rtu;
-    strcpy(rtuParams->devName, "");
-    rtuParams->baud = 9600;
-    rtuParams->dataBits = 8;
-    rtuParams->stopBits = 1;
-    rtuParams->parity = 'e';
-
-    return (BackendParams*)rtuParams;
-}
-
-int setRtuParam(RtuBackend* rtuParams, char c, char *value) {
-    int ok = 1;
-
-    switch (c) {
-    case 'b': {
-        rtuParams->baud = getInt(value, &ok);
-        if (0 != ok) {
-            printf("Baudrate is invalid %s", value);
-            ok = 0;
-        }
-    }
-        break;
-    case 'd': {
-        int db = getInt(value, &ok);
-        if (0 == ok || (7 != db && 8 != db)) {
-            printf("Data bits incorrect (%s)", value);
-            ok = 0;
-        }
-        else
-            rtuParams->dataBits = db;
-    }
-        break;
-    case 's': {
-        int sb = getInt(value, &ok);
-        if (0 == ok || (1 != sb && 2 != sb)) {
-            printf("Stop bits incorrect (%s)", value);
-            ok = 0;
-        }
-        else
-            rtuParams->stopBits = sb;
-    }
-        break;
-    default:
-        printf("Unknown rtu param (%c: %s)\n\n", c, value);
-        ok = 0;
-    }
-
-    return ok;
-}
-
-typedef struct {
-    ConnType type;
-    char ip[32];
-    int port;
-} TcpBackend;
-
-BackendParams *initTcpParams(TcpBackend *tcpParams) {
-    tcpParams->type = Tcp;
-    strcpy(tcpParams->ip, "0.0.0.0");
-    tcpParams->port = 502;
-
-    return (BackendParams*)tcpParams;
+    printf("Examples (run with default mbServer at port 1502): \n" \
+           "\tWrite data: \t%s --debug -mtcp -t0x10 -r0 -p1502 127.0.0.1 0x01 0x02 0x03\n" \
+           "\tRead that data:\t%s --debug -mtcp -t0x03 -r0 -p1502 127.0.0.1 -c3\n", progName, progName);
 }
 
 int main(int argc, char **argv)
@@ -149,7 +56,7 @@ int main(int argc, char **argv)
     int slaveAddr = 1;
     int startAddr = 100;
     int startReferenceAt0 = 0;
-    int readWriteNo = -1;
+    int readWriteNo = 1;
     int fType = FuncNone;
     int timeout_ms = 1000;
     int hasDevice = 0;
@@ -178,9 +85,6 @@ int main(int argc, char **argv)
         if (c == -1) {
             break;
         }
-
-        char help = c;
-        char *helpArg = optarg;
 
         switch (c) {
         case 0:
@@ -337,12 +241,12 @@ int main(int argc, char **argv)
 
     if (isWriteFunction) {
         int dataNo = argc - optind - 1;
-        if (-1 != readWriteNo && dataNo != readWriteNo) {
+        /*if (-1 != readWriteNo && dataNo != readWriteNo) {
             printf("Write count specified, not equal to data values count!");
             printUsage(argv[0]);
             exit(EXIT_FAILURE);
         }
-        else readWriteNo = dataNo;
+        else*/ readWriteNo = dataNo;
     }
 
     //allocate buffer for data
