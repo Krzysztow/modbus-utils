@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "modbus.h"
+#include "errno.h"
 
 const char DebugOpt[]   = "debug";
 const char TcpOptVal[]  = "tcp";
@@ -170,12 +171,14 @@ int main(int argc, char **argv)
             {0, 0,  0,  0}
         };
 
-        c = getopt_long(argc, argv, "a:b:d:c:m:r:s:t:p:o",
+        c = getopt_long(argc, argv, "a:b:d:c:m:r:s:t:p:o:",
                         long_options, &option_index);
         if (c == -1) {
-            printUsage(argv[0]);
             break;
         }
+
+        char help = c;
+        char *helpArg = optarg;
 
         switch (c) {
         case 0:
@@ -202,6 +205,7 @@ int main(int argc, char **argv)
                 exit(EXIT_FAILURE);
             }
         }
+            break;
 
         case 'm':
             if (0 == strcmp(optarg, TcpOptVal))
@@ -265,6 +269,7 @@ int main(int argc, char **argv)
                 exit(EXIT_FAILURE);
             }
         }
+            break;
             //rtu params
         case 'b':
         case 'd':
@@ -353,12 +358,12 @@ int main(int argc, char **argv)
                     if (Rtu == backend->type) {
                         RtuBackend *rtuP = (RtuBackend*)backend;
                         strcpy(rtuP->devName, argv[optind]);
-                        hasDevice = 0;
+                        hasDevice = 1;
                     }
                     else if (Tcp == backend->type) {
                         TcpBackend *tcpP = (TcpBackend*)backend;
                         strcpy(tcpP->ip, argv[optind]);
-                        hasDevice = 0;
+                        hasDevice = 1;
                     }
                 }
             }
@@ -404,33 +409,60 @@ int main(int argc, char **argv)
     } else {
         switch (fType) {
         case(ReadCoils):
-            ret = modbus_read_bits(ctx, startAddr, readWriteNo, data.dataInt);
+            ret = modbus_read_bits(ctx, startAddr, readWriteNo, data.data8);
             break;
         case(ReadDiscreteInput):
+            printf("ReadDiscreteInput: not implemented yet!\n");
             wDataType = DataInt;
             break;
         case(ReadHoldingRegisters):
+            ret = modbus_read_registers(ctx, startAddr, readWriteNo, data.data16);
+            break;
         case(ReadInputRegisters):
-            wDataType = Data16Array;
+            ret = modbus_read_input_registers(ctx, startAddr, readWriteNo, data.data16);
             break;
         case(WriteSingleCoil):
+            ret = modbus_write_bit(ctx, startAddr, data.dataInt);
+            break;
         case(WriteSingleRegister):
-            wDataType = DataInt;
-            isWriteFunction = 1;
+            ret = modbus_write_register(ctx, startAddr, data.dataInt);
             break;
         case(WriteMultipleCoils):
-            wDataType = Data8Array;
-            isWriteFunction = 1;
+            ret = modbus_write_bits(ctx, startAddr, readWriteNo, data.data8);
             break;
         case(WriteMultipleRegisters):
-            wDataType = Data16Array;
-            isWriteFunction = 1;
+            ret = modbus_write_registers(ctx, startAddr, readWriteNo, data.data16);
             break;
         default:
             printf("No correct function type chosen");
             printUsage(argv[0]);
             exit(EXIT_FAILURE);
         }
+    }
+
+    if (ret == readWriteNo) {//success
+        if (isWriteFunction)
+            printf("SUCCESS: written %d elements!\n", readWriteNo);
+        else {
+            printf("SUCCESS: read %d of elements:\n\tData: ", readWriteNo);
+            int i = 0;
+            if (DataInt == wDataType) {
+                printf("0x%04x\n", data.dataInt);
+            }
+            else {
+                const char Format8[] = "0x%02x ";
+                const char Format16[] = "0x%04x ";
+                const char *format = ((Data8Array == wDataType) ? Format8 : Format16);
+                for (; i < readWriteNo; ++i) {
+                    printf(format, (Data8Array == wDataType) ? data.data8[i] : data.data16[i]);
+                }
+                printf("\n");
+            }
+        }
+    }
+    else {
+        printf("ERROR occured!\n");
+        modbus_strerror(errno);
     }
 
     //cleanup
