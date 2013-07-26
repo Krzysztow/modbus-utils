@@ -153,6 +153,7 @@ int main(int argc, char **argv)
                 printUsage(argv[0]);
                 exit(EXIT_FAILURE);
             }
+            printf("Timeout set to %d\r\n", timeout_ms);
         }
             break;
 

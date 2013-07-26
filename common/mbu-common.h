@@ -81,6 +81,22 @@ int setRtuParam(void *backend, char c, char *value) {
             rtuParams->stopBits = sb;
     }
         break;
+    case 'p': {
+        if (0 == strcmp(value, "none")) {
+            rtuParams->parity = 'N';
+        }
+        else if (0 == strcmp(value, "even")) {
+            rtuParams->parity = 'E';
+        }
+        else if (0 == strcmp(value, "odd")) {
+            rtuParams->parity = 'O';
+        }
+        else {
+            printf("Unrecognized parity (%s)", value);
+            ok = 0;
+        }
+    }
+        break;
     default:
         printf("Unknown rtu param (%c: %s)\n\n", c, value);
         ok = 0;
@@ -117,7 +133,7 @@ BackendParams *createRtuBackend() {
     rtu->baud = 9600;
     rtu->dataBits = 8;
     rtu->stopBits = 1;
-    rtu->parity = 'e';
+    rtu->parity = 'E';
 
     return (BackendParams*)rtu;
 }
