@@ -25,7 +25,7 @@ const char HoldingRegistersNo[] = "hr";
 
 void printUsage(const char progName[]) {
     printf("%s [--%s] -m{tcp|rtu}\n\t" \
-           "--%s<discrete-inputs-no>=100 --%s<coils-no>=100 --%s<input-registers-no>=100 --%s<holding-registers-no>=100\n\t" \
+           "[-a<slave-addr=1>] --%s<discrete-inputs-no>=100 --%s<coils-no>=100 --%s<input-registers-no>=100 --%s<holding-registers-no>=100\n\t" \
            "[{rtu-params|tcp-params}]", progName, DebugOpt, DiscreteInputsNo, CoilsNo, InputRegistersNo, HoldingRegistersNo);
     printf("rtu-params:\n" \
            "\tb<baud-rate>=9600\n" \
@@ -45,6 +45,7 @@ int main(int argc, char **argv)
     modbus_mapping_t *mb_mapping;
 
     BackendParams *backend = 0;
+    int slaveAddr = 1;
     int debug = 0;
     int diNo = 100;
     int coilsNo = 100;
@@ -62,7 +63,7 @@ int main(int argc, char **argv)
             {0, 0,  0,  0}
         };
 
-        c = getopt_long(argc, argv, "b:d:m:s:p:",
+        c = getopt_long(argc, argv, "a:b:d:m:s:p:",
                         long_options, &option_index);
         if (c == -1) {
             break;
@@ -106,6 +107,16 @@ int main(int argc, char **argv)
                 }
             }
 
+            break;
+
+        case 'a': {
+            slaveAddr = getInt(optarg, &ok);
+            if (0 == ok) {
+                printf("Slave address (%s) is not integer!\n\n", optarg);
+                printUsage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+        }
             break;
 
         case 'm':
@@ -187,10 +198,12 @@ int main(int argc, char **argv)
 
     ctx = backend->createCtxt(backend);
     modbus_set_debug(ctx, debug);
+    modbus_set_slave(ctx, slaveAddr);
 
     uint8_t query[(Tcp == backend->type) ? MODBUS_TCP_MAX_ADU_LENGTH : MODBUS_RTU_MAX_ADU_LENGTH];
 
     for(;;) {
+
 
         if (0 == backend->listenForConnection(backend, ctx)) {
             break;

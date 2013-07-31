@@ -117,7 +117,13 @@ void delRtu(void *backend) {
     free(rtu);
 }
 
-int listenForRtuConnection(void *backend, modbus_t *ctx) {(void)backend; (void)ctx; return 1;}
+int listenForRtuConnection(void *backend, modbus_t *ctx) {
+    (void)backend;
+    (void)ctx;
+
+    printf("Connecting...\r\n");
+    return (0 == modbus_connect(ctx));
+}
 void closeRtuConnection(void *backend) {(void)backend;}
 
 BackendParams *createRtuBackend() {
