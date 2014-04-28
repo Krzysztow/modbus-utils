@@ -1,0 +1,7 @@
+modbus-utils (1.0) wheezy; urgency=low
+
+  * Initial debianization using https://github.com/Krzysztow/modbus-utils
+
+ -- Evgeny Boger <boger@contactless.ru>  Tue, 29 Apr 2014 01:59:04 +0400
+
+
