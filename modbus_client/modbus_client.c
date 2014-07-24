@@ -198,10 +198,8 @@ int main(int argc, char **argv)
     //choose write data type
     switch (fType) {
     case(ReadCoils):
-        wDataType = Data8Array;
-        break;
     case(ReadDiscreteInput):
-        wDataType = DataInt;
+        wDataType = Data8Array;
         break;
     case(ReadHoldingRegisters):
     case(ReadInputRegisters):
@@ -317,8 +315,7 @@ int main(int argc, char **argv)
             ret = modbus_read_bits(ctx, startAddr, readWriteNo, data.data8);
             break;
         case(ReadDiscreteInput):
-            printf("ReadDiscreteInput: not implemented yet!\n");
-            wDataType = DataInt;
+            ret = modbus_read_input_bits(ctx, startAddr, readWriteNo, data.data8);
             break;
         case(ReadHoldingRegisters):
             ret = modbus_read_registers(ctx, startAddr, readWriteNo, data.data16);
