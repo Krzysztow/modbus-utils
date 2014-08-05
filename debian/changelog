@@ -1,3 +1,10 @@
+modbus-utils (1.1) wheezy; urgency=low
+
+  * Add set-rd-address.sh script
+  * Fix ReadDiscreteInput function
+
+ -- Ivan Shvedunov <ivan4th@gmail.com>  Wed, 06 Aug 2014 10:15:01 +0400
+
 modbus-utils (1.0) wheezy; urgency=low
 
   * Initial debianization using https://github.com/Krzysztow/modbus-utils

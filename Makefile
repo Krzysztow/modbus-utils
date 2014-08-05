@@ -20,7 +20,7 @@ server:
 install: $(BIN_NAME)
 	$(MAKE) -C modbus_client install
 	$(MAKE) -C modbus_server install
-
+	install -m 0755 set-rd-address.sh $(DESTDIR)/$(prefix)/bin/set-rd-address.sh
 
 clean:
 	$(MAKE) -C modbus_client clean
