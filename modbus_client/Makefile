@@ -10,7 +10,7 @@ endif
 
 CC_FLAGS=-I../common `pkg-config --libs --cflags libmodbus`
 
-$(BIN_NAME):
+$(BIN_NAME): modbus_client.c
 	$(CC)  modbus_client.c  $(CC_FLAGS)  -o $(BIN_NAME)
 
 
