@@ -1,3 +1,15 @@
+modbus-utils (1.2.1) stable; urgency=medium
+
+  * fix timeout handling
+
+ -- Evgeny Boger <boger@contactless.ru>  Wed, 22 Jul 2015 22:53:15 +0300
+
+modbus-utils (1.2) stable; urgency=medium
+
+  * fix baud rate handling
+
+ -- Evgeny Boger <boger@contactless.ru>  Thu, 09 Jul 2015 19:55:45 +0300
+
 modbus-utils (1.1) wheezy; urgency=low
 
   * Add set-rd-address.sh script
