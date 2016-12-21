@@ -1,3 +1,9 @@
+modbus-utils (1.2.3) stable; urgency=medium
+
+  * disable annoying "timeout is set" information message
+
+ -- Evgeny Boger <boger@contactless.ru>  Wed, 21 Dec 2016 14:24:32 +0300
+
 modbus-utils (1.2.2) stable; urgency=medium
 
   * exit with EXIT_FAILURE in case Modbus request is failed
