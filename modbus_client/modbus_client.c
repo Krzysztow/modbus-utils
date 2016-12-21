@@ -349,8 +349,9 @@ int main(int argc, char **argv)
             exit(EXIT_FAILURE);
         }
     }
+    uint8_t success = (ret == readWriteNo);
 
-    if (ret == readWriteNo) {//success
+    if (success) {
         if (isWriteFunction)
             printf("SUCCESS: written %d elements!\n", readWriteNo);
         else {
@@ -392,5 +393,5 @@ int main(int argc, char **argv)
         break;
     }
 
-    exit(EXIT_SUCCESS);
+    exit(success ? EXIT_SUCCESS : EXIT_FAILURE);
 }
