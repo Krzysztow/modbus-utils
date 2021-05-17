@@ -14,9 +14,12 @@ typedef enum {
 int getInt(const char str[], int *ok) {
     int value;
     int ret = sscanf(str, "0x%x", &value);
-    if (0 >= ret) {//couldn't convert from hex, try dec
-        ret = sscanf(str, "%d", &value);
-    }
+     if (0 >= ret) {                    // couldn't convert from hex, try dec
+       if (strstr(str, "."))           // dotted ip address
+               ret = 0;
+       else
+               ret = sscanf(str, "%d", &value);
+     }
 
     if (0 != ok) {
         *ok = (0 < ret);
