@@ -28,7 +28,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "modbus.h"
+#include <modbus.h>
 #include "errno.h"
 
 #include "mbu-common.h"
