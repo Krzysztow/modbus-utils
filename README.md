@@ -9,14 +9,32 @@ Both apps are linked with libmodbus library. After repository is pulled do the f
 compilation
 ===========
 
+## option 1 (cmake)
+
+```sh
+$ git clone https://github.com/Krzysztow/modbus-utils
+$ cd modbus-utils
+$ git submodule update --init
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make 
+```
+
+## option 2
+
 #assumes you are in a root of the repository
+
 #go to libmodbus dir and compile it
+
 cd ./libmodbus
 ./configure
 ./make
+
 #as a result *.so libraries are in export ./src/.libs/ directory
 
 #get back to the root
+
 cd ..
 gcc ./modbus_client/modbus_client.c -I./common -I./libmodbus/src/ -L./libmodbus/src/.libs/ -lmodbus -o mbClient
 gcc ./modbus_server/modbus_server.c -I./common -I./libmodbus/src/ -L./libmodbus/src/.libs/ -lmodbus -o mbServer
