@@ -14,6 +14,5 @@ target_link_libraries(modbus_server PkgConfig::MODBUS)
 target_include_directories(modbus_server PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/common" "${MODBUS_INCLUDE_DIRS}")
 
 install(TARGETS modbus_server modbus_client DESTINATION ${CMAKE_INSTALL_BINDIR}
+        RUNTIME DESTINATION bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-
-
