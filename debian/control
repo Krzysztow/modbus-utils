@@ -1,0 +1,11 @@
+Source: modbus-utils
+Maintainer: Evgeny Boger <boger@contactless.ru>
+Section: misc
+Priority: optional
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 9), pkg-config, libmodbus-dev
+
+Package: modbus-utils
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmodbus5
+Description: Modbus client and server command line tools based on libmodbus

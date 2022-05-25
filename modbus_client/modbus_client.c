@@ -75,6 +75,8 @@ int main(int argc, char **argv)
     int c;
     int ok;
 
+    int gotData = 0; //Data_to_write existance flag
+    int raw_data = 0; //While parsing not keyword args
     int debug = 0;
     BackendParams *backend = 0;
     int slaveAddr = 1;
@@ -177,7 +179,6 @@ int main(int argc, char **argv)
                 printUsage(argv[0]);
                 exit(EXIT_FAILURE);
             }
-            printf("Timeout set to %d\r\n", timeout_ms);
         }
             break;
 
@@ -218,14 +219,11 @@ int main(int argc, char **argv)
     if (1 == startReferenceAt0) {
         startAddr--;
     }
-
     //choose write data type
     switch (fType) {
     case(ReadCoils):
-        wDataType = Data8Array;
-        break;
     case(ReadDiscreteInput):
-        wDataType = DataInt;
+        wDataType = Data8Array;
         break;
     case(ReadHoldingRegisters):
     case(ReadInputRegisters):
@@ -280,8 +278,10 @@ int main(int argc, char **argv)
     if (1 == debug && 1 == isWriteFunction)
         printf("Data to write: ");
     if (optind < argc) {
+
         while (optind < argc) {
-            if (0 == hasDevice) {
+	    raw_data = getInt(argv[optind], &ok);
+            if (0 == hasDevice && ok == 0) { //Portname couldn't consist of only numbers
                 if (0 != backend) {
                     if (Rtu == backend->type) {
                         RtuBackend *rtuP = (RtuBackend*)backend;
@@ -295,21 +295,24 @@ int main(int argc, char **argv)
                     }
                 }
             }
-            else {//setting write data buffer
+            else {//Got int as data => setting write data buffer
                 switch (wDataType) {
                 case (DataInt):
-                    data.dataInt = getInt(argv[optind], 0);
+                    data.dataInt = raw_data;
+                    gotData = 1;
                     if (debug)
                         printf("0x%x", data.dataInt);
                     break;
                 case (Data8Array): {
-                    data.data8[wDataIdx] = getInt(argv[optind], 0);
+                    data.data8[wDataIdx] = raw_data;
+                    gotData = 1;
                     if (debug)
                         printf("0x%02x ", data.data8[wDataIdx]);
                 }
                     break;
                 case (Data16Array): {
-                    data.data16[wDataIdx] = getInt(argv[optind], 0);
+                    data.data16[wDataIdx] = raw_data;
+                    gotData = 1;
                     if (debug)
                         printf("0x%04x ", data.data16[wDataIdx]);
                 }
@@ -320,14 +323,28 @@ int main(int argc, char **argv)
             optind++;
         }
     }
-    if (1 == debug && 1 == isWriteFunction)
-        printf("\n");
+
+    if (isWriteFunction == 1){
+    	if (gotData == 0) {
+		printf("\nSeems you are using a write function\nDon't forget to specify the value!\n");
+		exit(EXIT_FAILURE);}
+    	if (debug == 1)
+    		printf("\n");
+    }
 
     //create modbus context, and preapare it
     modbus_t *ctx = backend->createCtxt(backend);
     modbus_set_debug(ctx, debug);
     modbus_set_slave(ctx, slaveAddr);
 
+    struct timeval response_timeout;
+    response_timeout.tv_sec = 0;
+    response_timeout.tv_usec = timeout_ms * 1000;
+    #if LIBMODBUS_VERSION_CHECK(3, 1, 2)
+        modbus_set_response_timeout(ctx, response_timeout.tv_sec, response_timeout.tv_usec);
+    #else
+        modbus_set_response_timeout(ctx, &response_timeout);
+    #endif
     //issue the request
     int ret = -1;
     if (modbus_connect(ctx) == -1) {
@@ -341,8 +358,7 @@ int main(int argc, char **argv)
             ret = modbus_read_bits(ctx, startAddr, readWriteNo, data.data8);
             break;
         case(ReadDiscreteInput):
-            printf("ReadDiscreteInput: not implemented yet!\n");
-            wDataType = DataInt;
+            ret = modbus_read_input_bits(ctx, startAddr, readWriteNo, data.data8);
             break;
         case(ReadHoldingRegisters):
             ret = modbus_read_registers(ctx, startAddr, readWriteNo, data.data16);
@@ -368,8 +384,9 @@ int main(int argc, char **argv)
             exit(EXIT_FAILURE);
         }
     }
+    uint8_t success = (ret == readWriteNo);
 
-    if (ret == readWriteNo) {//success
+    if (success) {
         if (isWriteFunction)
             printf("SUCCESS: written %d elements!\n", readWriteNo);
         else {
@@ -411,5 +428,5 @@ int main(int argc, char **argv)
         break;
     }
 
-    exit(EXIT_SUCCESS);
+    exit(success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

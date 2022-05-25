@@ -38,9 +38,12 @@ typedef enum {
 int getInt(const char str[], int *ok) {
     int value;
     int ret = sscanf(str, "0x%x", &value);
-    if (0 >= ret) {//couldn't convert from hex, try dec
-        ret = sscanf(str, "%d", &value);
-    }
+     if (0 >= ret) {                    // couldn't convert from hex, try dec
+       if (strstr(str, "."))           // dotted ip address
+               ret = 0;
+       else
+               ret = sscanf(str, "%d", &value);
+     }
 
     if (0 != ok) {
         *ok = (0 < ret);
@@ -79,7 +82,7 @@ int setRtuParam(void *backend, char c, char *value) {
     switch (c) {
     case 'b': {
         rtuParams->baud = getInt(value, &ok);
-        if (0 != ok) {
+        if (0 == ok) {
             printf("Baudrate is invalid %s", value);
             ok = 0;
         }
