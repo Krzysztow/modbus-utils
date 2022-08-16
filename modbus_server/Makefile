@@ -8,7 +8,7 @@ else
        CC=$(DEB_HOST_GNU_TYPE)-gcc
 endif
 
-CC_FLAGS=-I../common `pkg-config --libs --cflags libmodbus`
+CC_FLAGS=-I../common `PKG_CONFIG_PATH=/usr/lib/$(DEB_HOST_GNU_TYPE)/pkgconfig pkg-config --libs --cflags libmodbus`
 
 $(BIN_NAME):
 	$(CC)  modbus_server.c  $(CC_FLAGS)  -o $(BIN_NAME)

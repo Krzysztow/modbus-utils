@@ -1,3 +1,10 @@
+modbus-utils (1.2.5) stable; urgency=medium
+
+  * rebuild of 1.2.4 for Debian bullseye (without source change)
+  * Makefile: make pkg-config work with multi-arch (for sbuild support)
+
+ -- Nikita Maslov <nikita.maslov@wirenboard.ru>  Fri, 29 Jul 2022 18:34:14 +0300
+
 modbus-utils (1.2.4) stable; urgency=medium
 
   * added check if any value is passed to write function
