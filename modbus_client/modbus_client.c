@@ -314,8 +314,8 @@ int main(int argc, char **argv)
     modbus_set_slave(ctx, slaveAddr);
 
     struct timeval response_timeout;
-    response_timeout.tv_sec = 0;
-    response_timeout.tv_usec = timeout_ms * 1000;
+    response_timeout.tv_sec = timeout_ms / 1000;
+    response_timeout.tv_usec = (timeout_ms % 1000) * 1000;
     #if LIBMODBUS_VERSION_CHECK(3, 1, 2)
         modbus_set_response_timeout(ctx, response_timeout.tv_sec, response_timeout.tv_usec);
     #else

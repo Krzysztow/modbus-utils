@@ -1,3 +1,9 @@
+modbus-utils (1.2.6) stable; urgency=medium
+
+  * Fix response timeout option handled incorrectly
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Wed, 30 Nov 2022 19:51:00 +0400
+
 modbus-utils (1.2.5) stable; urgency=medium
 
   * rebuild of 1.2.4 for Debian bullseye (without source change)
