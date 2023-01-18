@@ -1,0 +1,65 @@
+modbus-utils (1.2.7) stable; urgency=medium
+
+  * fix IP address parse in arguments
+
+ -- Nikita Maslov <nikita.maslov@wirenboard.ru>  Thu, 12 Jan 2023 21:03:16 +0600
+
+modbus-utils (1.2.6) stable; urgency=medium
+
+  * Fix response timeout option handled incorrectly
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Wed, 30 Nov 2022 19:51:00 +0400
+
+modbus-utils (1.2.5) stable; urgency=medium
+
+  * rebuild of 1.2.4 for Debian bullseye (without source change)
+  * Makefile: make pkg-config work with multi-arch (for sbuild support)
+
+ -- Nikita Maslov <nikita.maslov@wirenboard.ru>  Fri, 29 Jul 2022 18:34:14 +0300
+
+modbus-utils (1.2.4) stable; urgency=medium
+
+  * added check if any value is passed to write function
+  * improved parsing args for port
+
+ -- Vladimir Romanov <vdromanov@contactless.ru>  Sun, 27 Jan 2018 18:33:12 +0300
+
+modbus-utils (1.2.3) stable; urgency=medium
+
+  * disable annoying "timeout is set" information message
+
+ -- Evgeny Boger <boger@contactless.ru>  Wed, 21 Dec 2016 14:24:32 +0300
+
+modbus-utils (1.2.2) stable; urgency=medium
+
+  * exit with EXIT_FAILURE in case Modbus request is failed
+
+ -- Evgeny Boger <boger@contactless.ru>  Wed, 21 Dec 2016 13:16:41 +0300
+
+modbus-utils (1.2.1) stable; urgency=medium
+
+  * fix timeout handling
+
+ -- Evgeny Boger <boger@contactless.ru>  Wed, 22 Jul 2015 22:53:15 +0300
+
+modbus-utils (1.2) stable; urgency=medium
+
+  * fix baud rate handling
+
+ -- Evgeny Boger <boger@contactless.ru>  Thu, 09 Jul 2015 19:55:45 +0300
+
+modbus-utils (1.1) wheezy; urgency=low
+
+  * Add set-rd-address.sh script
+  * Fix ReadDiscreteInput function
+  (was) Ivan Shvedunov <ivan4th@gmail.com>  Wed, 06 Aug 2014 10:15:01 +0400
+  
+ -- Evgeny Boger <boger@contactless.ru>  Wed, 06 Aug 2014 10:15:01 +0400
+
+modbus-utils (1.0) wheezy; urgency=low
+
+  * Initial debianization using https://github.com/Krzysztow/modbus-utils
+
+ -- Evgeny Boger <boger@contactless.ru>  Tue, 29 Apr 2014 01:59:04 +0400
+
+
