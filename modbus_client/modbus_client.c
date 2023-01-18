@@ -257,7 +257,8 @@ int main(int argc, char **argv)
 
         while (optind < argc) {
 	    raw_data = getInt(argv[optind], &ok);
-            if (0 == hasDevice && ok == 0) { //Portname couldn't consist of only numbers
+            if (0 == hasDevice && (ok == 0 || //Portname couldn't consist of only numbers
+                                   NULL != strchr(argv[optind], '.'))) { // but IP address fits in sscanf()
                 if (0 != backend) {
                     if (Rtu == backend->type) {
                         RtuBackend *rtuP = (RtuBackend*)backend;

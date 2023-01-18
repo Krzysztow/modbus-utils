@@ -1,3 +1,9 @@
+modbus-utils (1.2.7) stable; urgency=medium
+
+  * fix IP address parse in arguments
+
+ -- Nikita Maslov <nikita.maslov@wirenboard.ru>  Thu, 12 Jan 2023 21:03:16 +0600
+
 modbus-utils (1.2.6) stable; urgency=medium
 
   * Fix response timeout option handled incorrectly
