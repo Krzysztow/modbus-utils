@@ -1,5 +1,4 @@
-DESTDIR=/
-prefix=usr
+prefix=/usr
 
 ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
        CC=gcc
