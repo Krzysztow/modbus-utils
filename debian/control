@@ -4,6 +4,7 @@ Section: misc
 Priority: optional
 Standards-Version: 3.9.2
 Build-Depends: debhelper (>= 9), pkg-config, libmodbus-dev
+Homepage: https://github.com/wirenboard/modbus-utils
 
 Package: modbus-utils
 Architecture: any
